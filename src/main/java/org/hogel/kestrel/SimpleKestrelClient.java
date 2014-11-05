@@ -60,6 +60,13 @@ public class SimpleKestrelClient implements Closeable {
         client.set(queueName, buffer, expTime);
     }
 
+
+    public void set(String queueName, int exp, byte[] value) {
+        Time expTime = Time.fromMilliseconds(exp);
+        ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(value);
+        client.set(queueName, buffer, expTime);
+    }
+
     public String get(String queueName) {
         return get(queueName, 0);
     }
@@ -67,6 +74,11 @@ public class SimpleKestrelClient implements Closeable {
     public String get(String queueName, int waitFor) {
         Duration waitDuration = Duration.apply(waitFor, TimeUnit.MILLISECONDS);
         return get(queueName, waitDuration);
+    }
+
+    public byte[] getByte(String queueName, int waitFor) {
+        Duration waitDuration = Duration.apply(waitFor, TimeUnit.MILLISECONDS);
+        return getByte(queueName, waitDuration);
     }
 
     private static final List<Class<? extends Exception>> THROUGH_EXCEPTIONS = new ArrayList<Class<? extends Exception>>();
@@ -85,6 +97,20 @@ public class SimpleKestrelClient implements Closeable {
             throw new IllegalStateException(e);
         }
     }
+
+    public byte[] getByte(String queueName, Duration waitDuration) {
+        try {
+            ChannelBuffer value = client.get(queueName, waitDuration).apply();
+            return value == null ? null : value.array();
+        } catch (Exception e) {
+            if (THROUGH_EXCEPTIONS.contains(e.getClass())) {
+                 return null;
+            }
+            LOG.error(e.getMessage(), e);
+            throw new IllegalStateException(e);
+        }
+    }
+
 
     public String peek(String queueName) {
         return peek(queueName, 0);
